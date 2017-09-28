@@ -9,7 +9,7 @@ Python program.
 License
 -------
 
-This is free software released under the terms of [the BSD 3-Clause License](
-https://opensource.org/licenses/BSD-3-Clause).  There is no warranty; not even
+This is free software released under the terms of `the BSD 3-Clause License
+<https://opensource.org/licenses/BSD-3-Clause>`_.  There is no warranty; not even
 for merchantability or fitness for a particular purpose.  Consult LICENSE.txt
 for copying conditions.
