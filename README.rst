@@ -1,4 +1,4 @@
-introduction
+Introduction
 ------------
 
 **rcomp** is a proof-of-concept for facilitating reproducible research by
