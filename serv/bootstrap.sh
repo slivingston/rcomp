@@ -13,4 +13,11 @@
 # https://mozilla.github.io/server-side-tls/ssl-config-generator/
 
 sudo apt-get -y update && sudo apt-get -y dist-upgrade
-sudo apt-get -y install nginx
+sudo apt-get -y install nginx redis-server supervisor python3-virtualenv
+sudo nginx -s quit
+sudo systemctl stop redis
+
+python3 -m virtualenv -p python3 PY
+source PY/bin/activate
+pip install -U pip
+pip install gunicorn aiohttp redis
