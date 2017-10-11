@@ -12,10 +12,10 @@ class Server:
         self.known_commands = ['version']
         self.app.router.add_get('/version', self.version)
 
-    def index(self, request):
+    async def index(self, request):
         return web.json_response({'commands': self.known_commands})
 
-    def version(self, request):
+    async def version(self, request):
         return web.json_response({'version': __version__})
 
     def run(self):
