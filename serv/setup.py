@@ -4,6 +4,7 @@ from setuptools import setup
 
 
 # Version
+# N.B., this is versioned separately from rcomp clients
 MAJOR = 0
 MINOR = 1
 MICRO = 0
