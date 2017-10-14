@@ -19,6 +19,13 @@ def main(argv=None):
                         help='print version number and exit')
     parser.add_argument('--rcomp-server', metavar='URI', dest='basi_uri',
                         help='base URI for job requests. (default is https://api.fmtools.org)')
+    parser.add_argument('--rcomp-nonblocking', action='store_true',
+                        dest='nonblocking', default=False,
+                        help='Default behavior is to wait for remote job to complete. Use this switch to immediately return after job successfully starts.')
+    parser.add_argument('--rcomp-continue', metavar='JOBID',
+                        dest='job_id', default=None, nargs='?',
+                        help='')
+
     if argv is None:
         args = parser.parse_args()
     else:
