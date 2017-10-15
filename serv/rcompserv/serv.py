@@ -14,8 +14,15 @@ class Server:
         self.app = web.Application()
         self.app.on_startup.append(self.start_redis)
         self.app.router.add_get('/', self.index)
-        self.known_commands = [{'name': 'version', 'summary': 'version string for rcomp server', 'http_methods': ['get']},
-                               {'name': 'trivial', 'summary': 'command that immediately completes with success, mostly of interest for testing.', 'http_methods': ['get', 'post']}]
+        self.known_commands = [
+            {'name': 'version',
+             'summary': 'version string for rcomp server',
+             'http_methods': ['get']},
+            {'name': 'trivial',
+             'summary': ('command that immediately completes with success,'
+                         ' mostly of interest for testing.'),
+             'http_methods': ['get', 'post']}
+        ]
         self.app.router.add_get('/version', self.version)
         self.app.router.add_post('/trivial', self.trivial)
 
@@ -36,11 +43,16 @@ class Server:
         request.app['redis'].hset(job_id, 'done', 1)
         request.app['redis'].hset(job_id, 'output', '')
         return web.json_response({
-            'cmd': str(request.app['redis'].hget(job_id, 'cmd'), encoding='utf-8'),
+            'cmd': str(request.app['redis'].hget(job_id, 'cmd'),
+                       encoding='utf-8'),
             'id': job_id,
-            'stime': str(request.app['redis'].hget(job_id, 'stime'), encoding='utf-8'),
-            'done': False if request.app['redis'].hget(job_id, 'done') == 0 else True,
-            'output': str(request.app['redis'].hget(job_id, 'output'), encoding='utf-8')
+            'stime': str(request.app['redis'].hget(job_id, 'stime'),
+                         encoding='utf-8'),
+            'done': (False
+                     if request.app['redis'].hget(job_id, 'done') == 0
+                     else True),
+            'output': str(request.app['redis'].hget(job_id, 'output'),
+                          encoding='utf-8')
         })
 
     def run(self):

@@ -7,7 +7,8 @@ from .serv import Server
 
 def main(argv=None):
     parser = argparse.ArgumentParser(prog='rcompserv')
-    parser.add_argument('-V', '--version', action='store_true', dest='show_version',
+    parser.add_argument('-V', '--version', action='store_true',
+                        dest='show_version',
                         help='print version number and exit')
     if argv is None:
         args = parser.parse_args()

@@ -16,15 +16,21 @@ from . import __version__
 
 def main(argv=None):
     parser = argparse.ArgumentParser(prog='rcomp', add_help=False)
-    parser.add_argument('--rcomp-help', action='store_true', dest='show_help',
+    parser.add_argument('--rcomp-help', action='store_true',
+                        dest='show_help',
                         help='print this help message and exit')
-    parser.add_argument('--rcomp-version', action='store_true', dest='show_version',
+    parser.add_argument('--rcomp-version', action='store_true',
+                        dest='show_version',
                         help='print version number and exit')
-    parser.add_argument('--rcomp-server', metavar='URI', dest='base_uri',
-                        help='base URI for job requests. (default is https://api.fmtools.org)')
+    parser.add_argument('--rcomp-server', metavar='URI',
+                        dest='base_uri',
+                        help=('base URI for job requests.'
+                              ' (default is https://api.fmtools.org)'))
     parser.add_argument('--rcomp-nonblocking', action='store_true',
                         dest='nonblocking', default=False,
-                        help='Default behavior is to wait for remote job to complete. Use this switch to immediately return after job successfully starts.')
+                        help=('Default behavior is to wait for remote job'
+                              ' to complete. Use this switch to immediately'
+                              ' return after job successfully starts.'))
     parser.add_argument('--rcomp-continue', metavar='JOBID',
                         dest='job_id', default=None, nargs='?',
                         help='')
@@ -54,9 +60,11 @@ def main(argv=None):
         if res.ok:
             index = json.loads(res.text)
             assert 'commands' in index
-            print('The following commands are available at {}'.format(base_uri))
+            print('The following commands are available at {}'
+                  .format(base_uri))
             for cmd in index['commands']:
-                print('{NAME}    {SUMMARY}'.format(NAME=cmd['name'], SUMMARY=cmd['summary']))
+                print('{NAME}    {SUMMARY}'
+                      .format(NAME=cmd['name'], SUMMARY=cmd['summary']))
 
     else:
         res = requests.get(base_uri+'/' + args.COMMAND)
