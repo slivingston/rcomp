@@ -24,6 +24,7 @@ class Server:
              'http_methods': ['get', 'post']}
         ]
         self.app.router.add_get('/version', self.version)
+        self.app.router.add_get('/trivial', self.trivial)
         self.app.router.add_post('/trivial', self.trivial)
 
     async def start_redis(self, app):
