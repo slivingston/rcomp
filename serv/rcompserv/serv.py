@@ -14,18 +14,33 @@ class Server:
         self.app = web.Application()
         self.app.on_startup.append(self.start_redis)
         self.app.router.add_get('/', self.index)
-        self.known_commands = [
-            {'name': 'version',
-             'summary': 'version string for rcomp server',
-             'http_methods': ['get']},
-            {'name': 'trivial',
-             'summary': ('command that immediately completes with success,'
-                         ' mostly of interest for testing.'),
-             'http_methods': ['get', 'post']}
-        ]
-        self.app.router.add_get('/version', self.version)
-        self.app.router.add_get('/trivial', self.trivial)
-        self.app.router.add_post('/trivial', self.trivial)
+        self.known_commands = dict()
+        self.register_command('version',
+                              'version string for rcomp server',
+                              self.version)
+        self.register_command('trivial',
+                              ('command that immediately completes with'
+                               ' success, mostly of interest for testing.'),
+                              self.trivial,
+                              ['get', 'post'])
+
+    def register_command(self, name, summary, function, methods=None):
+        """register new command in rcomp server.
+
+        `name` is used to form the route corresponding to this
+        command. As such, it must be URL-safe.
+
+        if `methods` is not given, then assume only HTTP method
+        support is GET.
+        """
+        assert name not in self.known_commands
+        if methods is None:
+            methods = ['get']
+        self.known_commands[name] = {'name': name,
+                                     'summary': summary,
+                                     'http_methods': methods}
+        for method in methods:
+            self.app.router.add_route(method, '/'+name, function)
 
     async def start_redis(self, app):
         app['redis'] = redis.StrictRedis()
