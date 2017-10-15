@@ -14,9 +14,10 @@ class Server:
         self.app = web.Application()
         self.app.on_startup.append(self.start_redis)
         self.app.router.add_get('/', self.index)
-        self.known_commands = ['version', 'trivial']
+        self.known_commands = [{'name': 'version', 'summary': 'version string for rcomp server', 'http_methods': ['get']},
+                               {'name': 'trivial', 'summary': 'command that immediately completes with success, mostly of interest for testing.', 'http_methods': ['get', 'post']}]
         self.app.router.add_get('/version', self.version)
-        self.app.router.add_get('/trivial', self.trivial)
+        self.app.router.add_post('/trivial', self.trivial)
 
     async def start_redis(self, app):
         app['redis'] = redis.StrictRedis()

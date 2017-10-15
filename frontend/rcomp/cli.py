@@ -56,7 +56,7 @@ def main(argv=None):
             assert 'commands' in index
             print('The following commands are available at {}'.format(base_uri))
             for cmd in index['commands']:
-                print(cmd)
+                print('{NAME}    {SUMMARY}'.format(NAME=cmd['name'], SUMMARY=cmd['summary']))
 
     else:
         res = requests.get(base_uri+'/' + args.COMMAND)
