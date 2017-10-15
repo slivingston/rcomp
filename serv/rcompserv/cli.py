@@ -10,6 +10,11 @@ def main(argv=None):
     parser.add_argument('-V', '--version', action='store_true',
                         dest='show_version',
                         help='print version number and exit')
+    parser.add_argument('--port',
+                        dest='port',
+                        type=int,
+                        default=8080,
+                        help='port on which to listen; default is 8080')
     if argv is None:
         args = parser.parse_args()
     else:
@@ -19,7 +24,7 @@ def main(argv=None):
         print('rcompserv '+__version__)
         return 0
 
-    Server().run()
+    Server(port=args.port).run()
     return 0
 
 
