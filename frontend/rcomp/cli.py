@@ -63,7 +63,7 @@ def main(argv=None):
             print('The following commands are available at {}'
                   .format(base_uri))
             for cmd in index['commands'].values():
-                print('{NAME}    {SUMMARY}'
+                print('{NAME}\t\t{SUMMARY}'
                       .format(NAME=cmd['name'], SUMMARY=cmd['summary']))
 
     else:
