@@ -18,17 +18,23 @@ class Server:
         self.register_command('version',
                               'version string for rcomp server',
                               self.version)
+        self.register_command('status ID',
+                              ('get status of and, if available, results'
+                               ' from job identified by ID'),
+                              self.status,
+                              route='/status/{ID}',
+                              hidden=True)
         self.register_command('trivial',
                               ('command that immediately completes with'
                                ' success, mostly of interest for testing.'),
                               self.trivial,
                               ['get', 'post'])
 
-    def register_command(self, name, summary, function, methods=None):
+    def register_command(self, name, summary, function, methods=None, route=None, hidden=False):
         """register new command in rcomp server.
 
-        `name` is used to form the route corresponding to this
-        command. As such, it must be URL-safe.
+        if `route` is not given, then `name` is used to form the route
+        corresponding to this command. As such, it must be URL-safe.
 
         if `methods` is not given, then assume only HTTP method
         support is GET.
@@ -36,11 +42,15 @@ class Server:
         assert name not in self.known_commands
         if methods is None:
             methods = ['get']
-        self.known_commands[name] = {'name': name,
-                                     'summary': summary,
-                                     'http_methods': methods}
+        if route is None:
+            route = '/' + name
+        if not hidden:
+            self.known_commands[name] = {'name': name,
+                                         'summary': summary,
+                                         'http_methods': methods,
+                                         'route': route}
         for method in methods:
-            self.app.router.add_route(method, '/'+name, function)
+            self.app.router.add_route(method, route, function)
 
     async def start_redis(self, app):
         app['redis'] = redis.StrictRedis()
@@ -51,6 +61,27 @@ class Server:
     async def version(self, request):
         return web.json_response({'version': __version__})
 
+    async def get_status(self, job_id):
+        if not self.app['redis'].exists(job_id):
+            return web.Response(status=404,
+                                text=json.dumps({'err': 'job not found'}))
+        return web.json_response({
+            'cmd': str(self.app['redis'].hget(job_id, 'cmd'),
+                       encoding='utf-8'),
+            'id': job_id,
+            'stime': str(self.app['redis'].hget(job_id, 'stime'),
+                         encoding='utf-8'),
+            'done': (False
+                     if self.app['redis'].hget(job_id, 'done') == 0
+                     else True),
+            'output': str(self.app['redis'].hget(job_id, 'output'),
+                          encoding='utf-8')
+        })
+
+    async def status(self, request):
+        job_id = request.match_info['ID']
+        return await self.get_status(job_id)
+
     async def trivial(self, request):
         job_id = str(uuid.uuid4())
         start_time = str(datetime.utcnow())
@@ -58,18 +89,7 @@ class Server:
         request.app['redis'].hset(job_id, 'stime', start_time)
         request.app['redis'].hset(job_id, 'done', 1)
         request.app['redis'].hset(job_id, 'output', '')
-        return web.json_response({
-            'cmd': str(request.app['redis'].hget(job_id, 'cmd'),
-                       encoding='utf-8'),
-            'id': job_id,
-            'stime': str(request.app['redis'].hget(job_id, 'stime'),
-                         encoding='utf-8'),
-            'done': (False
-                     if request.app['redis'].hget(job_id, 'done') == 0
-                     else True),
-            'output': str(request.app['redis'].hget(job_id, 'output'),
-                          encoding='utf-8')
-        })
+        return await self.get_status(job_id)
 
     def run(self):
         web.run_app(self.app, host=self._host, port=self._port)
