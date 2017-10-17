@@ -24,7 +24,8 @@ class Server:
         self.register_command('date',
                               ('get current time on the server,'
                                ' mostly of interest for testing.'),
-                              self.date)
+                              self.date,
+                              ['get', 'post'])
         self.register_command('status ID',
                               ('get status of and, if available, results'
                                ' from job identified by ID'),
