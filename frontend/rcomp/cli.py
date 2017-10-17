@@ -1,9 +1,9 @@
 """command-line interface (CLI)
 
-For local development, use the `--rcomp-server` switch to direct this
-client at the localhost. E.g.,
+For local development, use the `-s` switch to direct this client at
+the localhost. E.g.,
 
-    rcomp --rcomp-server http://127.0.0.1:8000
+    rcomp -s http://127.0.0.1:8000
 """
 import argparse
 import sys
@@ -17,22 +17,22 @@ from . import __version__
 
 def main(argv=None):
     parser = argparse.ArgumentParser(prog='rcomp', add_help=False)
-    parser.add_argument('--rcomp-help', action='store_true',
+    parser.add_argument('-h', '--help', action='store_true',
                         dest='show_help',
                         help='print this help message and exit')
-    parser.add_argument('--rcomp-version', action='store_true',
+    parser.add_argument('-V', '--version', action='store_true',
                         dest='show_version',
                         help='print version number and exit')
-    parser.add_argument('--rcomp-server', metavar='URI',
+    parser.add_argument('-s', '--server', metavar='URI',
                         dest='base_uri',
                         help=('base URI for job requests.'
                               ' (default is https://api.fmtools.org)'))
-    parser.add_argument('--rcomp-nonblocking', action='store_true',
+    parser.add_argument('--nonblocking', action='store_true',
                         dest='nonblocking', default=False,
                         help=('Default behavior is to wait for remote job'
                               ' to complete. Use this switch to immediately'
                               ' return after job successfully starts.'))
-    parser.add_argument('--rcomp-continue', metavar='JOBID',
+    parser.add_argument('--continue', metavar='JOBID',
                         dest='job_id', default=None, nargs='?',
                         help='')
     parser.add_argument('COMMAND', nargs='?')
