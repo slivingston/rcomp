@@ -7,6 +7,7 @@ client at the localhost. E.g.,
 """
 import argparse
 import sys
+import time
 import json
 
 import requests
@@ -66,10 +67,27 @@ def main(argv=None):
                 print('{NAME}\t\t{SUMMARY}'
                       .format(NAME=cmd['name'], SUMMARY=cmd['summary']))
 
-    else:
+    elif args.COMMAND == 'version':
         res = requests.get(base_uri+'/' + args.COMMAND)
         if res.ok:
             print(res.text)
+
+    else:
+        res = requests.get(base_uri+'/' + args.COMMAND)
+        if not res.ok:
+            print('Error occurred while sending initial request to the server!')
+            sys.exit(1)
+        msg = json.loads(res.text)
+        while not msg['done']:
+            time.sleep(0.1)
+            res = requests.get(base_uri+'/status/' + msg['id'])
+            if not res.ok:
+                print('Error occurred while communicating with server!')
+                sys.exit(1)
+            msg = json.loads(res.text)
+        job_output = msg['output'].strip()
+        if len(job_output) > 0:
+            print(job_output)
 
     return 0
 
