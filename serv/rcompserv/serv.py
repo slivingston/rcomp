@@ -1,5 +1,8 @@
+import json
 import uuid
 from datetime import datetime
+import asyncio
+import subprocess
 
 from aiohttp import web
 import redis
@@ -18,6 +21,10 @@ class Server:
         self.register_command('version',
                               'version string for rcomp server',
                               self.version)
+        self.register_command('date',
+                              ('get current time on the server,'
+                               ' mostly of interest for testing.'),
+                              self.date)
         self.register_command('status ID',
                               ('get status of and, if available, results'
                                ' from job identified by ID'),
@@ -61,22 +68,46 @@ class Server:
     async def version(self, request):
         return web.json_response({'version': __version__})
 
+    async def generic_task(self, job_id, cmd):
+        pr = await asyncio.create_subprocess_exec(*(cmd.split()), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        stdout_data, stderr_data = await pr.communicate()
+        self.app['redis'].hset(job_id, 'output', stdout_data)
+        self.app['redis'].hset(job_id, 'done', 1)
+
+    async def call_generic(self, cmd):
+        job_id = str(uuid.uuid4())
+        start_time = str(datetime.utcnow())
+        self.app['redis'].hset(job_id, 'cmd', cmd)
+        self.app['redis'].hset(job_id, 'stime', start_time)
+        self.app['redis'].hset(job_id, 'done', 0)
+        self.app.loop.create_task(self.generic_task(job_id, cmd))
+        return job_id
+
+    async def date(self, request):
+        job_id = await self.call_generic('date')
+        return await self.get_status(job_id)
+
     async def get_status(self, job_id):
         if not self.app['redis'].exists(job_id):
             return web.Response(status=404,
                                 text=json.dumps({'err': 'job not found'}))
-        return web.json_response({
-            'cmd': str(self.app['redis'].hget(job_id, 'cmd'),
-                       encoding='utf-8'),
+        cmd = str(self.app['redis'].hget(job_id, 'cmd'),
+                  encoding='utf-8')
+        start_time = str(self.app['redis'].hget(job_id, 'stime'),
+                         encoding='utf-8')
+        done = (False
+                if int(self.app['redis'].hget(job_id, 'done')) == 0
+                else True)
+        resp = {
+            'cmd': cmd,
             'id': job_id,
-            'stime': str(self.app['redis'].hget(job_id, 'stime'),
-                         encoding='utf-8'),
-            'done': (False
-                     if self.app['redis'].hget(job_id, 'done') == 0
-                     else True),
-            'output': str(self.app['redis'].hget(job_id, 'output'),
-                          encoding='utf-8')
-        })
+            'stime': start_time,
+            'done': done
+        }
+        if done:
+            resp['output'] = str(self.app['redis'].hget(job_id, 'output'),
+                                 encoding='utf-8')
+        return web.json_response(resp)
 
     async def status(self, request):
         job_id = request.match_info['ID']
