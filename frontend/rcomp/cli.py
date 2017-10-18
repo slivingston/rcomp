@@ -9,6 +9,8 @@ import argparse
 import sys
 import time
 import json
+import os.path
+import os
 
 import requests
 
@@ -33,8 +35,10 @@ def main(argv=None):
                               ' to complete. Use this switch to immediately'
                               ' return after job successfully starts.'))
     parser.add_argument('--continue', metavar='JOBID',
-                        dest='job_id', default=None, nargs='?',
+                        dest='job_id', default=False, nargs='?',
                         help='')
+    parser.add_argument('--cache-path', metavar='PATH',
+                        dest='cachepath', default=None)
     parser.add_argument('COMMAND', nargs='?')
     parser.add_argument('ARGV', nargs=argparse.REMAINDER)
 
@@ -56,7 +60,13 @@ def main(argv=None):
     else:
         base_uri = args.base_uri
 
-    if args.COMMAND is None:
+    if args.cachepath is None:
+        rcompcache_path = '.rcompcache'
+    else:
+        rcompcache_path = args.cachepath
+    rcompcache_path = os.path.join(os.path.abspath(os.getcwd()), rcompcache_path)
+
+    if (args.COMMAND is None) and (args.job_id is False):
         res = requests.get(base_uri+'/')
         if res.ok:
             index = json.loads(res.text)
@@ -73,11 +83,58 @@ def main(argv=None):
             print(res.text)
 
     else:
-        res = requests.get(base_uri+'/' + args.COMMAND)
-        if not res.ok:
-            print('Error occurred while sending initial request to the server!')
-            sys.exit(1)
-        msg = json.loads(res.text)
+        if (args.job_id is not False) or args.nonblocking:
+            if os.path.exists(rcompcache_path):
+                with open(rcompcache_path) as fp:
+                    rcompcache = json.load(fp)
+            else:
+                rcompcache = dict()
+        if args.job_id is False:
+            res = requests.get(base_uri+'/' + args.COMMAND)
+            if not res.ok:
+                print('Error occurred while sending initial request to the server!')
+                sys.exit(1)
+            msg = json.loads(res.text)
+            if not msg['done'] and args.nonblocking:
+                assert msg['id'] not in rcompcache
+                rcompcache[msg['id']] = {
+                    'cmd': msg['cmd'],
+                    'stime': msg['stime'],
+                    msg['done']: False
+                }
+                with open(rcompcache_path, 'w') as fp:
+                    json.dump(rcompcache, fp)
+                print('id: {}'.format(msg['id']))
+                sys.exit(0)
+
+        else:
+            if args.job_id is None:
+                earliest_job = None
+                if len(rcompcache) == 0:
+                    print('Error: `--continue` switch used but no jobs are known')
+                    sys.exit(1)
+                for k, v in rcompcache.items():
+                    if (earliest_job is None) or (v['stime'] < rcompcache[earliest_job]['stime']):
+                        earliest_job = k
+                job_id = earliest_job
+            else:
+                job_id = args.job_id
+            res = requests.get(base_uri+'/status/' + job_id)
+            if not res.ok:
+                print('Error occurred while communicating with server!')
+                sys.exit(1)
+            msg = json.loads(res.text)
+            if msg['done']:
+                rcompcache.pop(job_id)
+                with open(rcompcache_path, 'w') as fp:
+                    json.dump(rcompcache, fp)
+                job_output = msg['output'].strip()
+                if len(job_output) > 0:
+                    print(job_output)
+            else:
+                print('id: {}'.format(msg['id']))
+            sys.exit(0)
+
         while not msg['done']:
             time.sleep(0.1)
             res = requests.get(base_uri+'/status/' + msg['id'])
