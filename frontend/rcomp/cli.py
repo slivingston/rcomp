@@ -29,7 +29,7 @@ def main(argv=None):
                         dest='base_uri',
                         help=('base URI for job requests.'
                               ' (default is https://api.fmtools.org)'))
-    parser.add_argument('--nonblocking', action='store_true',
+    parser.add_argument('--no-block', action='store_true',
                         dest='nonblocking', default=False,
                         help=('Default behavior is to wait for remote job'
                               ' to complete. Use this switch to immediately'
