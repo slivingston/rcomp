@@ -37,6 +37,11 @@ class Server:
                                ' success, mostly of interest for testing.'),
                               self.trivial,
                               ['get', 'post'])
+        self.register_command('ltl2ba',
+                              ('wrapper of LTL2BA (LTL2BA originally by'
+                               ' Denis Oddoux and Paul Gastin)'),
+                              self.ltl2ba,
+                              ['get', 'post'])
 
     def register_command(self, name, summary, function, methods=None, route=None, hidden=False):
         """register new command in rcomp server.
@@ -122,6 +127,12 @@ class Server:
         request.app['redis'].hset(job_id, 'done', 1)
         request.app['redis'].hset(job_id, 'output', '')
         return await self.get_status(job_id)
+
+    async def ltl2ba(self, request):
+        if request.method == 'GET':
+            return web.json_response({'err': 'not implemented'})
+        else:  # request.method == 'POST'
+            return web.json_response({'err': 'not implemented'})
 
     def run(self):
         web.run_app(self.app, host=self._host, port=self._port)
