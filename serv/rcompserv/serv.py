@@ -75,7 +75,7 @@ class Server:
         return web.json_response({'version': __version__})
 
     async def generic_task(self, job_id, cmd):
-        pr = await asyncio.create_subprocess_exec(*(cmd.split()), stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        pr = await asyncio.create_subprocess_exec(*cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         stdout_data, stderr_data = await pr.communicate()
         self.app['redis'].hset(job_id, 'output', stdout_data)
         self.app['redis'].hset(job_id, 'done', 1)
@@ -83,14 +83,14 @@ class Server:
     async def call_generic(self, cmd):
         job_id = str(uuid.uuid4())
         start_time = str(datetime.utcnow())
-        self.app['redis'].hset(job_id, 'cmd', cmd)
+        self.app['redis'].hset(job_id, 'cmd', ' '.join(cmd))
         self.app['redis'].hset(job_id, 'stime', start_time)
         self.app['redis'].hset(job_id, 'done', 0)
         self.app.loop.create_task(self.generic_task(job_id, cmd))
         return job_id
 
     async def date(self, request):
-        job_id = await self.call_generic('date')
+        job_id = await self.call_generic(['date'])
         return await self.get_status(job_id)
 
     async def get_status(self, job_id):
@@ -132,7 +132,13 @@ class Server:
         if request.method == 'GET':
             return web.json_response({'err': 'not implemented'})
         else:  # request.method == 'POST'
-            return web.json_response({'err': 'not implemented'})
+            argv = []
+            if request.has_body:
+                payload = json.loads(await request.read())
+                if 'argv' in payload:
+                    argv = payload['argv']
+            job_id = await self.call_generic(['ltl2ba']+argv)
+            return await self.get_status(job_id)
 
     def run(self):
         web.run_app(self.app, host=self._host, port=self._port)

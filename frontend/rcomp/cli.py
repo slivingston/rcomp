@@ -90,7 +90,12 @@ def main(argv=None):
             else:
                 rcompcache = dict()
         if args.job_id is False:
-            res = requests.get(base_uri+'/' + args.COMMAND)
+            if args.ARGV is None:
+                argv = []
+            else:
+                argv = args.ARGV
+            res = requests.post(base_uri+'/' + args.COMMAND,
+                                data=json.dumps({'argv': argv}))
             if not res.ok:
                 print('Error occurred while sending initial request to the server!')
                 sys.exit(1)
