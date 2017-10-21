@@ -11,10 +11,35 @@ import time
 import json
 import os.path
 import os
+import base64
+import zlib
 
 import requests
 
 from . import __version__
+
+
+def find_files(command, argv):
+    """Find files for given command.
+
+    return copy of argv where file names are replaced with
+    zlib-compressed file data.
+    """
+    if command == 'ltl2ba':
+        start = 0
+        while True:
+            try:
+                start = argv.index('-F', start) + 1
+            except ValueError:
+                break
+            with open(argv[start], 'rb') as fp:
+                argv[start] = str(base64.b64encode(zlib.compress(fp.read())),
+                                  encoding='utf-8')
+        return argv
+    else:
+        # Do nothing for unrecognized commands and those that do not
+        # require treatment of file data.
+        return argv
 
 
 def main(argv=None):
@@ -94,6 +119,7 @@ def main(argv=None):
                 argv = []
             else:
                 argv = args.ARGV
+            argv = find_files(args.COMMAND, argv)
             res = requests.post(base_uri+'/' + args.COMMAND,
                                 data=json.dumps({'argv': argv}))
             if not res.ok:

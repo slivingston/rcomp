@@ -3,6 +3,11 @@ import uuid
 from datetime import datetime
 import asyncio
 import subprocess
+import base64
+import os
+import os.path
+import tempfile
+import zlib
 
 from aiohttp import web
 import redis
@@ -74,19 +79,23 @@ class Server:
     async def version(self, request):
         return web.json_response({'version': __version__})
 
-    async def generic_task(self, job_id, cmd):
+    async def generic_task(self, job_id, cmd, temporary_dir=None):
         pr = await asyncio.create_subprocess_exec(*cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         stdout_data, stderr_data = await pr.communicate()
         self.app['redis'].hset(job_id, 'output', stdout_data)
         self.app['redis'].hset(job_id, 'done', 1)
+        if (temporary_dir is not None) and len(temporary_dir) > 0:
+            for fpath in os.listdir(temporary_dir):
+                os.unlink(os.path.join(temporary_dir, fpath))
+            os.rmdir(temporary_dir)
 
-    async def call_generic(self, cmd):
+    async def call_generic(self, cmd, temporary_dir=None):
         job_id = str(uuid.uuid4())
         start_time = str(datetime.utcnow())
         self.app['redis'].hset(job_id, 'cmd', ' '.join(cmd))
         self.app['redis'].hset(job_id, 'stime', start_time)
         self.app['redis'].hset(job_id, 'done', 0)
-        self.app.loop.create_task(self.generic_task(job_id, cmd))
+        self.app.loop.create_task(self.generic_task(job_id, cmd, temporary_dir=temporary_dir))
         return job_id
 
     async def date(self, request):
@@ -128,6 +137,42 @@ class Server:
         request.app['redis'].hset(job_id, 'output', '')
         return await self.get_status(job_id)
 
+    def map_files(self, command, argv):
+        """Create temporary files from base64 encoded compressed data.
+
+        If any temporary files are created, they will all be in the
+        same temporary directory. If it is created, the path to this
+        temporary directory is returned. Otherwise, an empty string is
+        returned (instead of a path).
+
+        return pair D and ARGV, where D is the path to temporary
+        directory or empty string if no directory was created, and
+        ARGV is copy of argv with compressed file data replaced by
+        local paths to temporary files.
+
+        The caller is responsible for deleting any temporary files or
+        directories that are created.
+        """
+        if command == 'ltl2ba':
+            start = 0
+            temporary_dir = ''
+            while True:
+                try:
+                    start = argv.index('-F', start) + 1
+                except ValueError:
+                    break
+                if len(temporary_dir) == 0:
+                    temporary_dir = tempfile.mkdtemp()
+                fd, fname = tempfile.mkstemp(dir=temporary_dir)
+                fp = os.fdopen(fd, 'wb')
+                fp.write(zlib.decompress(base64.b64decode(bytes(argv[start], encoding='utf-8'),
+                                                          validate=True)))
+                fp.close()
+                argv[start] = fname
+            return temporary_dir, argv
+        else:
+            return '', argv
+
     async def ltl2ba(self, request):
         if request.method == 'GET':
             return web.json_response({'err': 'not implemented'})
@@ -137,7 +182,8 @@ class Server:
                 payload = json.loads(await request.read())
                 if 'argv' in payload:
                     argv = payload['argv']
-            job_id = await self.call_generic(['ltl2ba']+argv)
+            temporary_dir, argv = self.map_files('ltl2ba', argv)
+            job_id = await self.call_generic(['ltl2ba']+argv, temporary_dir)
             return await self.get_status(job_id)
 
     def run(self):
