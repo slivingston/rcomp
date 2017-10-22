@@ -19,6 +19,7 @@ class Server:
     def __init__(self, host='127.0.0.1', port=8080):
         self._host = host
         self._port = port
+        self.extra_headers = {'Access-Control-Allow-Origin': '*'}
         self.app = web.Application()
         self.app.on_startup.append(self.start_redis)
         self.app.router.add_get('/', self.index)
@@ -74,10 +75,12 @@ class Server:
         app['redis'] = redis.StrictRedis()
 
     async def index(self, request):
-        return web.json_response({'commands': self.known_commands})
+        return web.json_response({'commands': self.known_commands},
+                                 headers=self.extra_headers)
 
     async def version(self, request):
-        return web.json_response({'version': __version__})
+        return web.json_response({'version': __version__},
+                                 headers=self.extra_headers)
 
     async def generic_task(self, job_id, cmd, temporary_dir=None):
         pr = await asyncio.create_subprocess_exec(*cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -105,7 +108,8 @@ class Server:
     async def get_status(self, job_id):
         if not self.app['redis'].exists(job_id):
             return web.Response(status=404,
-                                text=json.dumps({'err': 'job not found'}))
+                                text=json.dumps({'err': 'job not found'}),
+                                headers=self.extra_headers)
         cmd = str(self.app['redis'].hget(job_id, 'cmd'),
                   encoding='utf-8')
         start_time = str(self.app['redis'].hget(job_id, 'stime'),
@@ -122,7 +126,8 @@ class Server:
         if done:
             resp['output'] = str(self.app['redis'].hget(job_id, 'output'),
                                  encoding='utf-8')
-        return web.json_response(resp)
+        return web.json_response(resp,
+                                 headers=self.extra_headers)
 
     async def status(self, request):
         job_id = request.match_info['ID']
@@ -175,7 +180,8 @@ class Server:
 
     async def ltl2ba(self, request):
         if request.method == 'GET':
-            return web.json_response({'err': 'not implemented'})
+            return web.json_response({'err': 'not implemented'},
+                                     headers=self.extra_headers)
         else:  # request.method == 'POST'
             argv = []
             if request.has_body:
