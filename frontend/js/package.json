@@ -1,0 +1,11 @@
+{
+    "name": "rcomp",
+    "version": "0.1.0",
+    "main": "cli.js",
+    "repository": "https://github.com/slivingston/rcomp",
+    "author": "Scott C. Livingston",
+    "license": "BSD-3-Clause",
+    "dependencies": {
+        "browserify": "^14.5.0"
+    }
+}
