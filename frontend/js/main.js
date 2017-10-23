@@ -8,6 +8,16 @@ const default_host = {
 };
 
 
+// getIndex( result_function, base_uri )
+//
+// result_function is a function that is called with the JSON body of
+// the response from the server to the index request. An `rcomp` index
+// request causes all commands that are known by the server to be
+// listed.
+//
+// base_uri (optional) provides the scheme, hostname, and port number
+// to which the request should be sent. The default value is
+// equivalent to https://api.fmtools.org
 exports.getIndex = (function (result_function, base_uri) {
     if (base_uri) {
         var new_host = url.parse(base_uri);
