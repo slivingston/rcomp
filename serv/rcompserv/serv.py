@@ -48,6 +48,10 @@ class Server:
                                ' Denis Oddoux and Paul Gastin)'),
                               self.ltl2ba,
                               ['get', 'post'])
+        self.register_command('gr1c',
+                              ('wrapper of gr1c (http://scottman.net/2012/gr1c)'),
+                              self.gr1c,
+                              ['get', 'post'])
 
     def register_command(self, name, summary, function, methods=None, route=None, hidden=False):
         """register new command in rcomp server.
@@ -190,6 +194,20 @@ class Server:
                     argv = payload['argv']
             temporary_dir, argv = self.map_files('ltl2ba', argv)
             job_id = await self.call_generic(['ltl2ba']+argv, temporary_dir)
+            return await self.get_status(job_id)
+
+    async def gr1c(self, request):
+        if request.method == 'GET':
+            return web.json_response({'err': 'not implemented'},
+                                     headers=self.extra_headers)
+        else:  # request.method == 'POST'
+            argv = []
+            if request.has_body:
+                payload = json.loads(await request.read())
+                if 'argv' in payload:
+                    argv = payload['argv']
+            temporary_dir, argv = self.map_files('gr1c', argv)
+            job_id = await self.call_generic(['gr1c']+argv, temporary_dir)
             return await self.get_status(job_id)
 
     def run(self):
