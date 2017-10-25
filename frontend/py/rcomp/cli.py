@@ -36,6 +36,16 @@ def find_files(command, argv):
                 argv[start] = str(base64.b64encode(zlib.compress(fp.read())),
                                   encoding='utf-8')
         return argv
+    elif command == 'gr1c':
+        all_files = False
+        for ii in range(len(argv)):
+            if argv[ii] == '--':
+                all_files = True
+            elif all_files or argv[ii][0] != '-':
+                with open(argv[ii], 'rb') as fp:
+                    argv[ii] = str(base64.b64encode(zlib.compress(fp.read())),
+                                   encoding='utf-8')
+        return argv
     else:
         # Do nothing for unrecognized commands and those that do not
         # require treatment of file data.

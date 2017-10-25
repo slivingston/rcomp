@@ -179,6 +179,22 @@ class Server:
                 fp.close()
                 argv[start] = fname
             return temporary_dir, argv
+        elif command == 'gr1c':
+            temporary_dir = ''
+            all_files = False
+            for ii in range(len(argv)):
+                if argv[ii] == '--':
+                    all_files = True
+                elif all_files or argv[ii][0] != '-':
+                    if len(temporary_dir) == 0:
+                        temporary_dir = tempfile.mkdtemp()
+                    fd, fname = tempfile.mkstemp(dir=temporary_dir)
+                    fp = os.fdopen(fd, 'wb')
+                    fp.write(zlib.decompress(base64.b64decode(bytes(argv[ii], encoding='utf-8'),
+                                                              validate=True)))
+                    fp.close()
+                    argv[ii] = fname
+            return temporary_dir, argv
         else:
             return '', argv
 
