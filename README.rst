@@ -21,6 +21,21 @@ UIs, so their installation and execution involve "backend" components, e.g.,
 nginx configurations.
 
 
+Version management
+------------------
+
+Version numbers are managed independently among clients and the server. One
+motivation to do this is some parts will be available as separate packages
+depending on best practices for respective platforms, e.g., releases of the
+Python client will be available on `PyPI <https://pypi.python.org/pypi>`_.
+Allowing version numbers to diverge enables us to enforce that changes to the
+version number of a released package only occur when code in that package
+changes. However, tracking large gaps among component version numbers or
+attempting to maintain backward compatibility far into the past does not yet
+have practical motivation, so major and minor version numbers will more or less
+increase at the same pace.
+
+
 License
 -------
 
