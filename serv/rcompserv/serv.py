@@ -91,6 +91,11 @@ class Server:
         stdout_data, stderr_data = await pr.communicate()
         self.app['redis'].hset(job_id, 'output', stdout_data)
         self.app['redis'].hset(job_id, 'done', 1)
+        self.app['redis'].hset(job_id, 'exitcode', pr.returncode)
+        if pr.returncode == 0:
+            self.app['redis'].hset(job_id, 'status', 'success')
+        else:
+            self.app['redis'].hset(job_id, 'status', 'error (nonzero exitcode)')
         if (temporary_dir is not None) and len(temporary_dir) > 0:
             for fpath in os.listdir(temporary_dir):
                 os.unlink(os.path.join(temporary_dir, fpath))
@@ -121,15 +126,22 @@ class Server:
         done = (False
                 if int(self.app['redis'].hget(job_id, 'done')) == 0
                 else True)
+        status = (None
+                  if not self.app['redis'].hexists(job_id, 'status')
+                  else str(self.app['redis'].hget(job_id, 'status'),
+                           encoding='utf-8'))
         resp = {
             'cmd': cmd,
             'id': job_id,
             'stime': start_time,
+            'status': status,
             'done': done
         }
         if done:
             resp['output'] = str(self.app['redis'].hget(job_id, 'output'),
                                  encoding='utf-8')
+            resp['ec'] = int(str(self.app['redis'].hget(job_id, 'exitcode'),
+                                 encoding='utf-8'))
         return web.json_response(resp,
                                  headers=self.extra_headers)
 
