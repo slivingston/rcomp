@@ -172,6 +172,7 @@ def main(argv=None):
                 job_output = msg['output'].strip()
                 if len(job_output) > 0:
                     print(job_output)
+                return msg['ec']  # use exitcode of remote job as that of this client
             else:
                 print('id: {}'.format(msg['id']))
             sys.exit(0)
@@ -186,6 +187,7 @@ def main(argv=None):
         job_output = msg['output'].strip()
         if len(job_output) > 0:
             print(job_output)
+        return msg['ec']  # use exitcode of remote job as that of this client
 
     return 0
 
