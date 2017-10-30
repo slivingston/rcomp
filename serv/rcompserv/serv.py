@@ -156,6 +156,8 @@ class Server:
         request.app['redis'].hset(job_id, 'stime', start_time)
         request.app['redis'].hset(job_id, 'done', 1)
         request.app['redis'].hset(job_id, 'output', '')
+        request.app['redis'].hset(job_id, 'exitcode', 0)
+        request.app['redis'].hset(job_id, 'status', 'success')
         return await self.get_status(job_id)
 
     def map_files(self, command, argv):
