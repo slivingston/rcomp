@@ -88,18 +88,26 @@ class Server:
 
     async def generic_task(self, job_id, cmd, temporary_dir=None):
         pr = await asyncio.create_subprocess_exec(*cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        stdout_data, stderr_data = await pr.communicate()
-        self.app['redis'].hset(job_id, 'output', stdout_data)
-        self.app['redis'].hset(job_id, 'done', 1)
-        self.app['redis'].hset(job_id, 'exitcode', pr.returncode)
-        if pr.returncode == 0:
-            self.app['redis'].hset(job_id, 'status', 'success')
+        try:
+            stdout_data, stderr_data = await asyncio.wait_for(pr.communicate(), timeout=60)
+        except asyncio.TimeoutError:
+            self.app['redis'].hset(job_id, 'output', '')
+            self.app['redis'].hset(job_id, 'status', 'error (timeout)')
+            self.app['redis'].hset(job_id, 'exitcode', 1)
+            self.app['redis'].hset(job_id, 'done', 1)
         else:
-            self.app['redis'].hset(job_id, 'status', 'error (nonzero exitcode)')
-        if (temporary_dir is not None) and len(temporary_dir) > 0:
-            for fpath in os.listdir(temporary_dir):
-                os.unlink(os.path.join(temporary_dir, fpath))
-            os.rmdir(temporary_dir)
+            self.app['redis'].hset(job_id, 'output', stdout_data)
+            self.app['redis'].hset(job_id, 'exitcode', pr.returncode)
+            if pr.returncode == 0:
+                self.app['redis'].hset(job_id, 'status', 'success')
+            else:
+                self.app['redis'].hset(job_id, 'status', 'error (nonzero exitcode)')
+            self.app['redis'].hset(job_id, 'done', 1)
+        finally:
+            if (temporary_dir is not None) and len(temporary_dir) > 0:
+                for fpath in os.listdir(temporary_dir):
+                    os.unlink(os.path.join(temporary_dir, fpath))
+                os.rmdir(temporary_dir)
 
     async def call_generic(self, cmd, temporary_dir=None):
         job_id = str(uuid.uuid4())
@@ -154,10 +162,10 @@ class Server:
         start_time = str(datetime.utcnow())
         request.app['redis'].hset(job_id, 'cmd', 'trivial')
         request.app['redis'].hset(job_id, 'stime', start_time)
-        request.app['redis'].hset(job_id, 'done', 1)
         request.app['redis'].hset(job_id, 'output', '')
         request.app['redis'].hset(job_id, 'exitcode', 0)
         request.app['redis'].hset(job_id, 'status', 'success')
+        request.app['redis'].hset(job_id, 'done', 1)
         return await self.get_status(job_id)
 
     def map_files(self, command, argv):

@@ -170,6 +170,8 @@ def main(argv=None):
                 with open(rcompcache_path, 'w') as fp:
                     json.dump(rcompcache, fp)
                 job_output = msg['output'].strip()
+                if msg['ec'] != 0:
+                    print('job_status: "{}"'.format(msg['status']))
                 if len(job_output) > 0:
                     print(job_output)
                 return msg['ec']  # use exitcode of remote job as that of this client
@@ -184,6 +186,8 @@ def main(argv=None):
                 print('Error occurred while communicating with server!')
                 sys.exit(1)
             msg = json.loads(res.text)
+        if msg['ec'] != 0:
+            print('job_status: "{}"'.format(msg['status']))
         job_output = msg['output'].strip()
         if len(job_output) > 0:
             print(job_output)
