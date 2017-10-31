@@ -72,6 +72,12 @@ def main(argv=None):
     parser.add_argument('--continue', metavar='JOBID',
                         dest='job_id', default=False, nargs='?',
                         help='')
+    parser.add_argument('-t', '--timeout', metavar='T',
+                        dest='timeout', type=int,
+                        help=('maximum duration (seconds) of remote job;'
+                              ' if 0, then no timeout restriction is used.'
+                              ' default behavior is no timeout, but note'
+                              ' that `rcomp` servers can still impose one.'))
     parser.add_argument('--cache-path', metavar='PATH',
                         dest='cachepath', default=None)
     parser.add_argument('COMMAND', nargs='?')
@@ -129,9 +135,11 @@ def main(argv=None):
                 argv = []
             else:
                 argv = args.ARGV
-            argv = find_files(args.COMMAND, argv)
+            payload = {'argv': find_files(args.COMMAND, argv)}
+            if args.timeout is not None:
+                payload['timeout'] = args.timeout
             res = requests.post(base_uri+'/' + args.COMMAND,
-                                data=json.dumps({'argv': argv}))
+                                data=json.dumps(payload))
             if not res.ok:
                 print('Error occurred while sending initial request to the server!')
                 sys.exit(1)

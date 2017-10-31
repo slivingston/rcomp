@@ -86,10 +86,13 @@ class Server:
         return web.json_response({'version': __version__},
                                  headers=self.extra_headers)
 
-    async def generic_task(self, job_id, cmd, temporary_dir=None):
+    async def generic_task(self, job_id, cmd, temporary_dir=None, timeout=None):
         pr = await asyncio.create_subprocess_exec(*cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         try:
-            stdout_data, stderr_data = await asyncio.wait_for(pr.communicate(), timeout=60)
+            if timeout is None or timeout < 1:
+                stdout_data, stderr_data = await pr.communicate()
+            else:
+                stdout_data, stderr_data = await asyncio.wait_for(pr.communicate(), timeout=timeout)
         except asyncio.TimeoutError:
             self.app['redis'].hset(job_id, 'output', '')
             self.app['redis'].hset(job_id, 'status', 'error (timeout)')
@@ -109,18 +112,31 @@ class Server:
                     os.unlink(os.path.join(temporary_dir, fpath))
                 os.rmdir(temporary_dir)
 
-    async def call_generic(self, cmd, temporary_dir=None):
+    async def call_generic(self, cmd, temporary_dir=None, timeout=None):
         job_id = str(uuid.uuid4())
         start_time = str(datetime.utcnow())
         self.app['redis'].hset(job_id, 'cmd', ' '.join(cmd))
         self.app['redis'].hset(job_id, 'stime', start_time)
         self.app['redis'].hset(job_id, 'done', 0)
-        self.app.loop.create_task(self.generic_task(job_id, cmd, temporary_dir=temporary_dir))
+        self.app.loop.create_task(self.generic_task(job_id, cmd, temporary_dir=temporary_dir, timeout=timeout))
         return job_id
 
     async def date(self, request):
-        job_id = await self.call_generic(['date'])
-        return await self.get_status(job_id)
+        if request.method == 'GET':
+            return web.json_response({'err': 'not implemented'},
+                                     headers=self.extra_headers)
+        else:  # request.method == 'POST'
+            timeout = None
+            if request.has_body:
+                payload = json.loads(await request.read())
+                if 'argv' in payload:
+                    argv = payload['argv']
+                if ('timeout' in payload
+                    and isinstance(payload['timeout'], int)
+                    and payload['timeout'] >= 0):
+                    timeout = payload['timeout']
+            job_id = await self.call_generic(['date'], timeout=timeout)
+            return await self.get_status(job_id)
 
     async def get_status(self, job_id):
         if not self.app['redis'].exists(job_id):
@@ -226,12 +242,19 @@ class Server:
                                      headers=self.extra_headers)
         else:  # request.method == 'POST'
             argv = []
+            timeout = None
             if request.has_body:
                 payload = json.loads(await request.read())
                 if 'argv' in payload:
                     argv = payload['argv']
+                if ('timeout' in payload
+                    and isinstance(payload['timeout'], int)
+                    and payload['timeout'] >= 0):
+                    timeout = payload['timeout']
             temporary_dir, argv = self.map_files('ltl2ba', argv)
-            job_id = await self.call_generic(['ltl2ba']+argv, temporary_dir)
+            job_id = await self.call_generic(['ltl2ba']+argv,
+                                             temporary_dir=temporary_dir,
+                                             timeout=timeout)
             return await self.get_status(job_id)
 
     async def gr1c(self, request):
@@ -240,12 +263,19 @@ class Server:
                                      headers=self.extra_headers)
         else:  # request.method == 'POST'
             argv = []
+            timeout = None
             if request.has_body:
                 payload = json.loads(await request.read())
                 if 'argv' in payload:
                     argv = payload['argv']
+                if ('timeout' in payload
+                    and isinstance(payload['timeout'], int)
+                    and payload['timeout'] >= 0):
+                    timeout = payload['timeout']
             temporary_dir, argv = self.map_files('gr1c', argv)
-            job_id = await self.call_generic(['gr1c']+argv, temporary_dir)
+            job_id = await self.call_generic(['gr1c']+argv,
+                                             temporary_dir=temporary_dir,
+                                             timeout=timeout)
             return await self.get_status(job_id)
 
     def run(self):
