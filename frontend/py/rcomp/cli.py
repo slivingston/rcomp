@@ -19,6 +19,40 @@ import requests
 from . import __version__
 
 
+def get(uri, verbose=False):
+    if verbose:
+        print('> GET {}'.format(uri))
+    res = requests.get(uri)
+    if verbose:
+        print_httpresponse(res)
+    return res
+
+def post(uri, payload=None, verbose=False):
+    """Wrapper for requests.post()
+
+    If given, payload should be a `dict` object. Internally it is
+    translated to JSON before calling requests.post().
+    """
+    if verbose:
+        print('> POST {}'.format(uri))
+        if payload is not None:
+            print('> {}'.format(payload))
+    if payload is None:
+        res = requests.post(uri)
+    else:
+        res = requests.post(uri, data=json.dumps(payload))
+    if verbose:
+        print_httpresponse(res)
+    return res
+
+def print_httpresponse(res, prefix='< '):
+    print('{PREFIX}{STATUS_CODE} {REASON}'.format(PREFIX=prefix, STATUS_CODE=res.status_code, REASON=res.reason))
+    for hname, value in res.headers.items():
+        print('{PREFIX}{HNAME}: {VALUE}'.format(PREFIX=prefix, HNAME=hname, VALUE=value))
+    if len(res.text) > 0:
+        print('{PREFIX}{TEXT}'.format(PREFIX=prefix, TEXT=res.text))
+
+
 def find_files(command, argv):
     """Find files for given command.
 
@@ -60,6 +94,10 @@ def main(argv=None):
     parser.add_argument('-V', '--version', action='store_true',
                         dest='show_version',
                         help='print version number and exit')
+    parser.add_argument('-v', '--verbose', action='store_true',
+                        dest='verbose', default=False,
+                        help=('be verbose; print JSON data from outgoing'
+                              ' and incoming messages'))
     parser.add_argument('-s', '--server', metavar='URI',
                         dest='base_uri',
                         help=('base URI for job requests.'
@@ -108,7 +146,7 @@ def main(argv=None):
     rcompcache_path = os.path.join(os.path.abspath(os.getcwd()), rcompcache_path)
 
     if (args.COMMAND is None) and (args.job_id is False):
-        res = requests.get(base_uri+'/')
+        res = get(base_uri+'/', verbose=args.verbose)
         if res.ok:
             index = json.loads(res.text)
             assert 'commands' in index
@@ -119,7 +157,7 @@ def main(argv=None):
                       .format(NAME=cmd['name'], SUMMARY=cmd['summary']))
 
     elif args.COMMAND == 'version':
-        res = requests.get(base_uri+'/' + args.COMMAND)
+        res = get(base_uri+'/' + args.COMMAND, verbose=args.verbose)
         if res.ok:
             print(res.text)
 
@@ -138,8 +176,7 @@ def main(argv=None):
             payload = {'argv': find_files(args.COMMAND, argv)}
             if args.timeout is not None:
                 payload['timeout'] = args.timeout
-            res = requests.post(base_uri+'/' + args.COMMAND,
-                                data=json.dumps(payload))
+            res = post(base_uri+'/' + args.COMMAND, payload, verbose=args.verbose)
             if not res.ok:
                 print('Error occurred while sending initial request to the server!')
                 sys.exit(1)
@@ -168,7 +205,7 @@ def main(argv=None):
                 job_id = earliest_job
             else:
                 job_id = args.job_id
-            res = requests.get(base_uri+'/status/' + job_id)
+            res = get(base_uri+'/status/' + job_id, verbose=args.verbose)
             if not res.ok:
                 print('Error occurred while communicating with server!')
                 sys.exit(1)
@@ -189,7 +226,7 @@ def main(argv=None):
 
         while not msg['done']:
             time.sleep(0.1)
-            res = requests.get(base_uri+'/status/' + msg['id'])
+            res = get(base_uri+'/status/' + msg['id'], verbose=args.verbose)
             if not res.ok:
                 print('Error occurred while communicating with server!')
                 sys.exit(1)
