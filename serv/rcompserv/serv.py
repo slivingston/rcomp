@@ -16,9 +16,10 @@ from . import __version__
 
 
 class Server:
-    def __init__(self, host='127.0.0.1', port=8080):
+    def __init__(self, host='127.0.0.1', port=8080, timeout_per_job=None):
         self._host = host
         self._port = port
+        self._timeout_per_job = timeout_per_job
         self.extra_headers = {'Access-Control-Allow-Origin': '*'}
         self.app = web.Application()
         self.app.on_startup.append(self.start_redis)
@@ -87,6 +88,11 @@ class Server:
                                  headers=self.extra_headers)
 
     async def generic_task(self, job_id, cmd, temporary_dir=None, timeout=None):
+        if self._timeout_per_job is not None:
+            if timeout is None:
+                timeout = self._timeout_per_job
+            else:
+                timeout = min(timeout, self._timeout_per_job)
         pr = await asyncio.create_subprocess_exec(*cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         try:
             if timeout is None or timeout < 1:
@@ -94,6 +100,7 @@ class Server:
             else:
                 stdout_data, stderr_data = await asyncio.wait_for(pr.communicate(), timeout=timeout)
         except asyncio.TimeoutError:
+            pr.kill()
             self.app['redis'].hset(job_id, 'output', '')
             self.app['redis'].hset(job_id, 'status', 'error (timeout)')
             self.app['redis'].hset(job_id, 'exitcode', 1)

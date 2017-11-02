@@ -10,6 +10,11 @@ def main(argv=None):
     parser.add_argument('-V', '--version', action='store_true',
                         dest='show_version',
                         help='print version number and exit')
+    parser.add_argument('-t', '--timeout', metavar='T',
+                        dest='timeout', type=int,
+                        help=('maximum duration (seconds) of jobs;'
+                              ' if 0, then no timeout restriction is used;'
+                              ' default behavior is no timeout.'))
     parser.add_argument('--port',
                         dest='port',
                         type=int,
@@ -24,7 +29,7 @@ def main(argv=None):
         print('rcompserv '+__version__)
         return 0
 
-    Server(port=args.port).run()
+    Server(port=args.port, timeout_per_job=args.timeout).run()
     return 0
 
 
