@@ -118,6 +118,9 @@ def main(argv=None):
                               ' that `rcomp` servers can still impose one.'))
     parser.add_argument('--cache-path', metavar='PATH',
                         dest='cachepath', default=None)
+    parser.add_argument('--print-cache', action='store_true',
+                        dest='print_cache', default=False,
+                        help='print known jobs from the local rcomp cache.')
     parser.add_argument('COMMAND', nargs='?')
     parser.add_argument('ARGV', nargs=argparse.REMAINDER)
 
@@ -144,6 +147,21 @@ def main(argv=None):
     else:
         rcompcache_path = args.cachepath
     rcompcache_path = os.path.join(os.path.abspath(os.getcwd()), rcompcache_path)
+
+    if args.print_cache:
+        if os.path.exists(rcompcache_path):
+            with open(rcompcache_path) as fp:
+                rcompcache = json.load(fp)
+        else:
+            rcompcache = dict()
+        if len(rcompcache) == 0:
+            print('The local cache is empty.')
+        else:
+            for k, v in rcompcache.items():
+                print('job: {}'.format(k))
+                print('\tcommand: {}'.format(v['cmd']))
+                print('\tstart time: {}'.format(v['stime']))
+        return 0
 
     if (args.COMMAND is None) and (args.job_id is False):
         res = get(base_uri+'/', verbose=args.verbose)
