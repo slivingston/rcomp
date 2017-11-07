@@ -204,7 +204,7 @@ def main(argv=None):
                 rcompcache[msg['id']] = {
                     'cmd': msg['cmd'],
                     'stime': msg['stime'],
-                    msg['done']: False
+                    'done': False
                 }
                 with open(rcompcache_path, 'w') as fp:
                     json.dump(rcompcache, fp)
