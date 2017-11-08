@@ -117,7 +117,10 @@ def main(argv=None):
                               ' default behavior is no timeout, but note'
                               ' that `rcomp` servers can still impose one.'))
     parser.add_argument('--cache-path', metavar='PATH',
-                        dest='cachepath', default=None)
+                        dest='cachepath', default=None,
+                        help=('path to cache file; default is .rcompcache'
+                              ' in the directory from which `rcomp` client'
+                              ' is called.'))
     parser.add_argument('--print-cache', action='store_true',
                         dest='print_cache', default=False,
                         help='print known jobs from the local rcomp cache.')
