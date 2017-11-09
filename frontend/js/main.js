@@ -89,3 +89,74 @@ exports.getServerVersion = (function (result_function, base_uri) {
     });
     req.end();
 });
+
+// callGeneric( cmd, argv, result_function, base_uri )
+//
+// cmd is the remote program name, e.g., `ltl2ba`.
+//
+// argv is an array of arguments, where file names may be replaced by
+// base64-encoded copies of local files.
+//
+// result_function is a function that is called with the JSON body of
+// the response from the server to the index request.
+//
+// base_uri (optional) provides the scheme, hostname, and port number
+// to which the request should be sent. The default value is
+// equivalent to https://api.fmtools.org
+exports.callGeneric = (function (cmd, argv, result_function, base_uri) {
+    var body = JSON.stringify({
+        argv: argv
+    });
+    var options = {
+        path: '/'+cmd,
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'Content-Length': Buffer.byteLength(body)
+        }
+    };
+    var reqf = createProtoRequest( options, base_uri );
+    var data = '';
+    var req = reqf((res) => {
+        res.on('data', (chunk) => {
+            data += chunk;
+        });
+        res.on('end', () => {
+            var msg = JSON.parse(data);
+            if (msg['done']) {
+                result_function(msg);
+            } else {
+                var timeout = undefined;
+                timeout = setInterval((job_id) => {
+
+                    var reqf = createProtoRequest( {path: '/status/'+job_id}, base_uri );
+                    var data = '';
+                    var req = reqf((res) => {
+                        res.on('data', (chunk) => {
+                            data += chunk;
+                        });
+                        res.on('end', () => {
+                            var msg = JSON.parse(data);
+                            if (msg['done']) {
+                                clearInterval(timeout);
+                                result_function(msg);
+                            }
+                        });
+                    });
+                    req.on('error', (err) => {
+                        console.error(err);
+                    });
+                    req.end();
+
+                                     },
+                                      300,
+                                      msg['id']);
+            }
+        });
+    });
+    req.on('error', (err) => {
+        console.error(err);
+    });
+    req.write(body);
+    req.end();
+});
