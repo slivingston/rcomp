@@ -12,21 +12,37 @@ const main = require('./main.js');
 
 
 if (process.argv.includes('-h') || process.argv.includes('--help')) {
-    console.log('cli.js [-s URI] [COMMAND [ARG [ARG...]]]');
+    console.log('cli.js [-h] [-s URI] [COMMAND [ARG [ARG...]]]');
     var print_help = true;
 } else {
 
+    // Defaults
     var base_uri = undefined;
-    if (process.argv.includes('-s')) {
-        var ind = process.argv.indexOf('-s');
-        if (process.argv.length - 1 <= ind) {
-            throw 'Missing parameter URI of switch `-s`';
+
+    var ind = 2;
+    while (process.argv[ind]) {
+        if (process.argv[ind] == '-s') {
+            var ind = process.argv.indexOf('-s');
+            if (process.argv.length - 1 <= ind) {
+                throw 'Missing parameter URI of switch `-s`';
+            }
+            base_uri = process.argv[ind+1];
+            ind += 1;
+        } else {
+            break;
         }
-        base_uri = process.argv[ind+1];
+        ind += 1;
+    }
+    if (process.argv[ind] == 'version') {
+        main.getServerVersion(function (res) {
+            console.log(res);
+        },
+                      base_uri);
+    } else if (process.argv[ind] === undefined) {
+        main.getIndex(function (res) {
+            console.log(res);
+        },
+                      base_uri);
     }
 
-    main.getIndex(function (res) {
-        console.log(res);
-    },
-                  base_uri);
 }
