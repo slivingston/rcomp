@@ -40,7 +40,7 @@ def post(uri, payload=None, verbose=False):
     if payload is None:
         res = requests.post(uri)
     else:
-        res = requests.post(uri, data=json.dumps(payload))
+        res = requests.post(uri, json=payload)
     if verbose:
         print_httpresponse(res)
     return res
