@@ -41,7 +41,9 @@ if (!print_help) {
                               base_uri);
     } else if (process.argv[ind] === undefined) {
         main.getIndex(function (res) {
-            console.log(res);
+            for (var command in res.commands) {
+                console.log(String(command) + '\t\t' + res.commands[command]['summary']);
+            }
         },
                       base_uri);
     } else {
