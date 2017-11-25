@@ -16,9 +16,10 @@ that have ``rcompserv`` processes.
 
 Source code for clients are in the directory ``frontend/``. They are
 approximately sorted according to programming language, e.g., the directory
-``py/`` contains a client library in Python. Note that some clients have Web
-UIs, so their installation and execution involve "backend" components, e.g.,
-nginx configurations.
+``py/`` contains a client library in Python, and the directory ``js/`` contains
+a client library in JavaScript (ECMAScript) with examples using Node.js.
+Note that some clients have Web UIs, so their installation and execution involve
+"backend" components, e.g., nginx configurations.
 
 
 Version management
