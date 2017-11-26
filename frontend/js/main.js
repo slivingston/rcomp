@@ -1,3 +1,7 @@
+// main module of `rcomp` JS client
+//
+// For an example of using this in command-line applications, read cli.js
+
 const https = require('https');
 const http = require('http');
 const url = require('url');
