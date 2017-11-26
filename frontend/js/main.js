@@ -3,6 +3,14 @@ const http = require('http');
 const url = require('url');
 
 
+// createProtoRequest( options, base_uri )
+//
+// construct request for an `rcomp` server. The scheme etc. are
+// determined from base_uri, if given. Otherwise, the default
+// https://api.fmtools.org is used.
+//
+// This function is intended for the internal implementation of this
+// client library, and the API for it may change without warning.
 function createProtoRequest( options, base_uri ) {
     var options = options;
     if (options === undefined) {
