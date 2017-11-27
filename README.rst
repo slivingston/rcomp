@@ -9,7 +9,7 @@ Python program.
 Organization
 ------------
 
-Source code for the server is in the directory ``serv/``. Note that it is
+Source code for the server is in the directory ``server/``. Note that it is
 collectively referred to as **the server**, but in general it can be deployed
 over multiple hosts, e.g., with reverse proxies that load balance across hosts
 that have ``rcompserv`` processes.
