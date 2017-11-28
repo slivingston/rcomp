@@ -2,9 +2,11 @@
 //
 // For an example of using this in command-line applications, read cli.js
 
+const fs = require('fs');
 const https = require('https');
 const http = require('http');
 const url = require('url');
+const zlib = require('zlib');
 
 
 // createProtoRequest( options, base_uri )
@@ -48,6 +50,43 @@ function createProtoRequest( options, base_uri ) {
         return scheme.request(options, f);
     });
 }
+
+
+// This function is entirely similar to find_files() in the Python
+// client, except that filesystem calls are asynchronous, and the
+// resulting argv is passed to the given callback function.
+//
+// index is used internally for recursion to track the position in
+// argv during parsing, so should not be given by API users, but
+// equivalently can be 0 on the first call to find_files().
+exports.find_files = (function (command, argv, callback, index) {
+    if (index === undefined) {
+        index = 0;
+    }
+    if (command === 'ltl2ba') {
+        while (index < argv.length) {
+            if (argv[index] === '-F' && index + 1 < argv.length) {
+                fs.readFile(argv[index+1], (err, data) => {
+                    if (err) throw err;
+                    zlib.deflate(data, (err, data) => {
+                        if (err) throw err;
+                        argv[index+1] = data.toString('base64');
+                        exports.find_files(command, argv, callback, index + 2);
+                    });
+                });
+                return;
+            }
+            index += 1;
+        }
+        callback(argv);
+    } else if (command === 'gr1c') {
+        callback(argv);
+    } else {
+        // Do nothing for unrecognized commands and those that do not
+        // require treatment of file data.
+        callback(argv);
+    }
+});
 
 
 // getIndex( result_function, base_uri )

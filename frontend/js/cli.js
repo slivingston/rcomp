@@ -47,13 +47,16 @@ if (!print_help) {
         },
                       base_uri);
     } else {
-        main.callGeneric(process.argv[ind], process.argv.slice(ind+1),
-                         function (res) {
-                             if (res['output'].length > 0) {
-                                 console.log(res['output']);
-                             }
-                             process.exitCode = res['ec'];
-                         },
-                         base_uri);
+        const command = process.argv[ind];
+        main.find_files(command, process.argv.slice(ind+1), function (argv) {
+            main.callGeneric(command, argv,
+                             function (res) {
+                                 if (res['output'].length > 0) {
+                                     console.log(res['output']);
+                                 }
+                                 process.exitCode = res['ec'];
+                             },
+                             base_uri);
+        });
     }
 }
