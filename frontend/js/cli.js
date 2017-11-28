@@ -51,7 +51,7 @@ if (!print_help) {
             main.callGeneric(command, argv,
                              function (res) {
                                  if (res['output'].length > 0) {
-                                     console.log(res['output']);
+                                     console.log(res['output'].trim());
                                  }
                                  process.exitCode = res['ec'];
                              },
