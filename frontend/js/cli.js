@@ -22,7 +22,6 @@ while (process.argv[ind]) {
         print_help = true;
         break;
     } else if (process.argv[ind] == '-s') {
-        var ind = process.argv.indexOf('-s');
         if (process.argv.length - 1 <= ind) {
             throw 'Missing parameter URI of switch `-s`';
         }
