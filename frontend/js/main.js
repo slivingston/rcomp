@@ -59,7 +59,10 @@ function createProtoRequest( options, base_uri ) {
 // index is used internally for recursion to track the position in
 // argv during parsing, so should not be given by API users, but
 // equivalently can be 0 on the first call to find_files().
-exports.find_files = (function (command, argv, callback, index) {
+//
+// `options` is used internally to preserve state during callback
+// chaining.  It can be ignored by API users.
+exports.find_files = (function (command, argv, callback, index, options) {
     if (index === undefined) {
         index = 0;
     }
@@ -80,6 +83,27 @@ exports.find_files = (function (command, argv, callback, index) {
         }
         callback(argv);
     } else if (command === 'gr1c') {
+        if (options === undefined) {
+            var options = {
+                all_files: false
+            };
+        }
+        while (index < argv.length) {
+            if (argv[index] === '--') {
+                options.all_files = true;
+            } else if (options.all_files || argv[index][0] !== '-') {
+                fs.readFile(argv[index], (err, data) => {
+                    if (err) throw err;
+                    zlib.deflate(data, (err, data) => {
+                        if (err) throw err;
+                        argv[index] = data.toString('base64');
+                        exports.find_files(command, argv, callback, index + 1, options);
+                    });
+                });
+                return;
+            }
+            index += 1;
+        }
         callback(argv);
     } else {
         // Do nothing for unrecognized commands and those that do not
