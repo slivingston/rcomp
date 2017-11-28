@@ -56,7 +56,7 @@ function createProtoRequest( options, base_uri ) {
 // client, except that filesystem calls are asynchronous, and the
 // resulting argv is passed to the given callback function.
 //
-// index is used internally for recursion to track the position in
+// `index` is used internally for recursion to track the position in
 // argv during parsing, so should not be given by API users, but
 // equivalently can be 0 on the first call to find_files().
 //
