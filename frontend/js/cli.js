@@ -50,6 +50,9 @@ if (!print_help) {
         main.find_files(command, process.argv.slice(ind+1), function (argv) {
             main.callGeneric(command, argv,
                              function (res) {
+                                 if (res['ec'] !== 0) {
+                                     console.log('job_status: "' + res['status'] + '"');
+                                 }
                                  if (res['output'].length > 0) {
                                      console.log(res['output'].trim());
                                  }
