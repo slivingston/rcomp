@@ -3,12 +3,12 @@
 //
 // In general this module (cli.js) is intended to be used as a NodeJS
 // script in a terminal, not within a browser.  Core implementation is
-// in other files, in particular main.js, which can be used in other
+// in other files, in particular rcomp.js, which can be used in other
 // programs, whether NodeJS scripts or Web apps. cli.js is not
 // necessary if you are embedding this client into JS code that is
 // intended for use in a Web browser.
 
-const main = require('./main.js');
+const main = require('./rcomp.js');
 
 
 // Defaults
