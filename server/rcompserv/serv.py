@@ -15,6 +15,17 @@ import redis
 from . import __version__
 
 
+def check_date():
+    try:
+        x = subprocess.check_output('date')
+    except OSError:
+        return False
+    if len(x) > 0:
+        return True
+    else:
+        return False
+
+
 class Server:
     def __init__(self, host='127.0.0.1', port=8080, timeout_per_job=None):
         self._host = host
@@ -32,7 +43,8 @@ class Server:
                               ('get current time on the server,'
                                ' mostly of interest for testing.'),
                               self.date,
-                              ['get', 'post'])
+                              ['get', 'post'],
+                              check=check_date)
         self.register_command('status ID',
                               ('get status of and, if available, results'
                                ' from job identified by ID'),
@@ -54,7 +66,7 @@ class Server:
                               self.gr1c,
                               ['get', 'post'])
 
-    def register_command(self, name, summary, function, methods=None, route=None, hidden=False):
+    def register_command(self, name, summary, function, methods=None, route=None, hidden=False, check=None):
         """register new command in rcomp server.
 
         if `route` is not given, then `name` is used to form the route
@@ -65,8 +77,16 @@ class Server:
 
         if `hidden` (default False), then the command will not be
         included in the index sent to clients.
+
+        if `check` is a function, then it will be called to decide
+        whether the command to be registered is supported by the host.
+        Otherwise (default), no check is performed.
         """
         assert name not in self.known_commands
+        if check:
+            if not check():
+                print('WARNING: failed to register command: {}'.format(name))
+                return
         if methods is None:
             methods = ['get']
         if route is None:
