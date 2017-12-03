@@ -25,6 +25,19 @@ def check_date():
     else:
         return False
 
+def check_gr1c():
+    try:
+        v = subprocess.check_output(['gr1c', '-V'], universal_newlines=True)
+    except OSError:
+        return False
+    endofline = v.find('\n')
+    if endofline == -1:
+        return False
+    parts = v[:endofline].split()
+    if len(parts) != 2 or parts[0] != 'gr1c':
+        return False
+    return True
+
 
 class Server:
     def __init__(self, host='127.0.0.1', port=8080, timeout_per_job=None):
@@ -64,7 +77,8 @@ class Server:
         self.register_command('gr1c',
                               ('wrapper of gr1c (http://scottman.net/2012/gr1c)'),
                               self.gr1c,
-                              ['get', 'post'])
+                              ['get', 'post'],
+                              check=check_gr1c)
 
     def register_command(self, name, summary, function, methods=None, route=None, hidden=False, check=None):
         """register new command in rcomp server.
