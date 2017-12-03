@@ -228,7 +228,10 @@ def main(argv=None):
                 job_id = args.job_id
             res = get(base_uri+'/status/' + job_id, verbose=args.verbose)
             if not res.ok:
-                print('Error occurred while communicating with server!')
+                if res.status_code == 404:
+                    print('Job {} is not known at {}'.format(job_id, base_uri))
+                else:
+                    print('Error occurred while communicating with server!')
                 sys.exit(1)
             msg = json.loads(res.text)
             if msg['done']:
