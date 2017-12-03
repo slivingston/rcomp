@@ -2,8 +2,8 @@ Introduction
 ------------
 
 **rcomp** is a proof-of-concept for facilitating reproducible research by
-running primary assets remotely and collecting results by locally using a pure
-Python program.
+running primary assets remotely while providing interaction and result
+collection by easy-to-install client software.
 
 
 Organization
