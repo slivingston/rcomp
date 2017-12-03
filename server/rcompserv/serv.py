@@ -38,6 +38,15 @@ def check_gr1c():
         return False
     return True
 
+def check_ltl2ba():
+    try:
+        h = subprocess.check_output(['ltl2ba', '-f', '[]<>p1'], universal_newlines=True)
+    except OSError:
+        return False
+    if not h.startswith('never {'):
+        return False
+    return True
+
 
 class Server:
     def __init__(self, host='127.0.0.1', port=8080, timeout_per_job=None):
@@ -73,7 +82,8 @@ class Server:
                               ('wrapper of LTL2BA (LTL2BA originally by'
                                ' Denis Oddoux and Paul Gastin)'),
                               self.ltl2ba,
-                              ['get', 'post'])
+                              ['get', 'post'],
+                              check=check_ltl2ba)
         self.register_command('gr1c',
                               ('wrapper of gr1c (http://scottman.net/2012/gr1c)'),
                               self.gr1c,
