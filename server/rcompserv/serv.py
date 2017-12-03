@@ -62,6 +62,9 @@ class Server:
 
         if `methods` is not given, then assume only HTTP method
         support is GET.
+
+        if `hidden` (default False), then the command will not be
+        included in the index sent to clients.
         """
         assert name not in self.known_commands
         if methods is None:
