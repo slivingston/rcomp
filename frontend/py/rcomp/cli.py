@@ -199,7 +199,13 @@ def main(argv=None):
                 payload['timeout'] = args.timeout
             res = post(base_uri+'/' + args.COMMAND, payload, verbose=args.verbose)
             if not res.ok:
-                print('Error occurred while sending initial request to the server!')
+                if res.status_code == 404:
+                    print('`{}` is not known by the server at {}'.format(
+                        args.COMMAND,
+                        base_uri
+                    ))
+                else:  # Details not known, so print generic message
+                    print('Error occurred while sending initial request to the server!')
                 sys.exit(1)
             msg = json.loads(res.text)
             if not msg['done'] and args.nonblocking:
