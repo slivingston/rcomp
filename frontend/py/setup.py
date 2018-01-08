@@ -7,7 +7,7 @@ from setuptools import setup
 # N.B., this is versioned separately from rcompserv
 MAJOR = 0
 MINOR = 0
-MICRO = 0
+MICRO = 1
 
 rcomp_version = '{major}.{minor}.{micro}'.format(major=MAJOR, minor=MINOR, micro=MICRO)
 
